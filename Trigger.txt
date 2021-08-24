@@ -1,0 +1,31 @@
+
+
+/* un trigger con el uso de un cursor explicito para incrementar el sueldo de aquellos 
+vendedores que hayan usado el mismo porcentaje de descuento para clientes en más de 
+3 ocasiones.*/
+
+
+
+
+create or replace function tg_incremento() returns trigger as $tg_incremento$
+
+declare
+	registro Record;
+	cursor_incremento_sueldo cursor for select vendedor.nombres_vendedor,
+	count(venta.total_descuento) as descuento from venta, vendedor
+	where venta.id_vendedor = vendedor.id_vendedor
+	group by vendedor.nombres_vendedor;
+begin
+	for registro in cursor_incremento_sueldo loop
+	if (registro.descuento >3 ) then
+	update vendedor set  sueldo_mensual = sueldo_mensual + 150 
+	where id_vendedor = id_vendedor;
+	raise notice 'El sueldo se  ha  incrementado';
+	end if; end loop;
+
+end; 
+$tg_incremento$
+language plpgsql;
+
+create trigger tg_incremento before insert or update on venta for each row execute procedure 
+tg_incremento ();
